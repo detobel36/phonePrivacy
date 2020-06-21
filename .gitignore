@@ -1,0 +1,9 @@
+*.iml
+Testbed/.gradle
+Testbed/local.properties
+Testbed/.idea/*
+Testbed/.DS_Store
+Testbed/build
+Testbed/captures
+Testbed/.externalNativeBuild
+Testbed/.cxx
