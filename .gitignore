@@ -7,3 +7,5 @@ Testbed/build
 Testbed/captures
 Testbed/.externalNativeBuild
 Testbed/.cxx
+*.pcap
+
