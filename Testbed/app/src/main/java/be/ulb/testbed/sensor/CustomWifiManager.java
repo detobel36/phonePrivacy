@@ -5,6 +5,11 @@ import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteOrder;
+
 /**
  * Interface to manage Wifi
  */
@@ -37,6 +42,29 @@ public class CustomWifiManager implements SensorManager {
         if(wifiManager != null) {
             wifiManager.setWifiEnabled(false);
         }
+    }
+
+    public InetAddress getWifiIpAddress() {
+        InetAddress ipAddressInet = null;
+
+        if(wifiManager != null) {
+            int ipAddress = wifiManager.getDhcpInfo().serverAddress;
+
+            // Convert little-endian to big-endianif needed
+            if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
+                ipAddress = Integer.reverseBytes(ipAddress);
+            }
+
+            final byte[] ipByteArray = BigInteger.valueOf(ipAddress).toByteArray();
+
+            try {
+                ipAddressInet = InetAddress.getByAddress(ipByteArray);
+            } catch (UnknownHostException ex) {
+                // TODO print message
+            }
+        }
+
+        return ipAddressInet;
     }
 
 }
