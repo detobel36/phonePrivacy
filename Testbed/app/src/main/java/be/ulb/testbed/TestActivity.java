@@ -30,42 +30,49 @@ public class TestActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_test);
 
-        listAction.add(new TestAction(this, R.id.progressBarWifiON) {
+        listAction.add(new TestAction(this, R.id.progressBarWifiON, 30) {
             @Override
             public void executeAction() {
                 customWifiManager.enable();
             }
         });
 
-        listAction.add(new TestAction(this, R.id.progressBarBluetoothON) {
+        listAction.add(new TestAction(this, R.id.progressBarNoModification, 60) {
+            @Override
+            public void executeAction() {
+                // Do nothing
+            }
+        });
+
+        listAction.add(new TestAction(this, R.id.progressBarBluetoothON, 30) {
             @Override
             public void executeAction() {
                 customBluetoothManager.enable();
             }
         });
 
-        listAction.add(new TestAction(this, R.id.progressBarBluetoothOFF) {
+        listAction.add(new TestAction(this, R.id.progressBarBluetoothOFF, 30) {
             @Override
             public void executeAction() {
                 customBluetoothManager.disable();
             }
         });
 
-        listAction.add(new TestAction(this, R.id.progressBarLocationON) {
+        listAction.add(new TestAction(this, R.id.progressBarLocationON, 30) {
             @Override
             public void executeAction() {
                 customLocationManager.enable();
             }
         });
 
-        listAction.add(new TestAction(this, R.id.progressBarWifiOFF) {
+        listAction.add(new TestAction(this, R.id.progressBarWifiOFF, 30) {
             @Override
             public void executeAction() {
                 customWifiManager.disable();
             }
         });
 
-        listAction.add(new TestAction(this, R.id.progressBarWifiON2) {
+        listAction.add(new TestAction(this, R.id.progressBarWifiON2, 30) {
             @Override
             public void executeAction() {
                 customWifiManager.enable();

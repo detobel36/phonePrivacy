@@ -1,13 +1,7 @@
 #!/usr/bin/python3
 
-"""
-TODO
-- L'appliation doit envoyer une requête PING pour dire à quel étape elle est
-- Le server doit détecter le message ping
-"""
 
-
-from scapy.all import wrpcap, sniff, IP, ARP, DNS, UDP, IPv6, Dot3
+from scapy.all import wrpcap, sniff, IP, ARP, DNS, UDP, IPv6, Dot3, Raw
 import os
 import socket
 from datetime import datetime
@@ -18,12 +12,14 @@ class Analyze:
     # Contant
     SELECT_INTERFACE = 'ap0'
     LOCAL_NETWORK = ipaddress.IPv4Network('192.168.0.0/16')
+    CURRENT_IP_ADDRRESS = "192.168.12.1"
+    PING_PORT = 12345
     
     def __init__(self, phoneIp = "192.168.12.243"):
         self.phoneIp = phoneIp
         self.allHost = list()
         self.allDnsRequest = list()
-        self.allLocalRequest = list()
+        self.allLocalRequest = list()  # TODO utilise ces données
         self.listPackets = None
 
     def _getPacketIp(self, packet):
@@ -59,13 +55,15 @@ class Analyze:
 
     def _analyzePacket(self, packet):
         if(self._isPacketLinkedToPhone(packet)):
-            # print("Packet (" + str(int(packet.time)) + "): " + str(packet.summary()))
-            # print("")
 
             ip = self._getPacketIp(packet)
             if(ipaddress.IPv4Address(ip) in self.LOCAL_NETWORK):
                 if(ip in self.allLocalRequest):
                     self.allLocalRequest.append(ip)
+
+                if(ip == self.CURRENT_IP_ADDRRESS and packet.haslayer(UDP) and \
+                        packet[UDP].dport == self.PING_PORT):
+                    print("Message: " + str(packet[Raw].load.decode("utf-8")))
 
             elif(ip not in self.allHost):
                 self.allHost.append(ip)

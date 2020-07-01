@@ -17,8 +17,6 @@ import be.ulb.testbed.sensor.CustomWifiManager;
 public class TimerTestActionTask extends Thread {
 
     private static final String TAG = "TimerTask";
-    private static final Integer TIMER_PER_ACTION = 30; // 30 seconds
-
 
     private final ArrayList<TestAction> listAction;
     private final CustomWifiManager customWifiManager;
@@ -47,26 +45,26 @@ public class TimerTestActionTask extends Thread {
 
         while(currentActionId < listAction.size()) {
             final TestAction currentAction = listAction.get(currentActionId);
-            currentAction.executeAction();
             Log.d(TAG, "Try to send packet");
             sendUdpPacket();
+            currentAction.executeAction();
 
             // Wait a defined time
-            currentTiming = 0;
-            while (currentTiming < TIMER_PER_ACTION) {
+            currentTiming = 0; // In half second
+            while (currentTiming < (currentAction.getTimer() * 2)) {
                 currentTiming += 1;
 
                 // Update the progress bar and display the
                 //current value in the text view
                 handler.post(new Runnable() {
                     public void run() {
-                        final int timingToPercent = Math.round((currentTiming / TIMER_PER_ACTION) * 100);
+                        final int timingToPercent = Math.round((currentTiming / (currentAction.getTimer()*2)) * 100);
                         currentAction.getProgressBar().setProgress(timingToPercent);
                     }
                 });
 
                 try {
-                    Thread.sleep(1000); // 1 second
+                    Thread.sleep(500); // 0.5 second
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
