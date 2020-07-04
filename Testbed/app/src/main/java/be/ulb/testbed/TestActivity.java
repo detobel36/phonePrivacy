@@ -2,6 +2,7 @@ package be.ulb.testbed;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.view.WindowManager;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -29,6 +30,7 @@ public class TestActivity extends AppCompatActivity {
         initSensor();
 
         setContentView(R.layout.activity_test);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         listAction.add(new TestAction(this, R.id.progressBarWifiON, 30) {
             @Override

@@ -46,7 +46,7 @@ public class TimerTestActionTask extends Thread {
         while(currentActionId < listAction.size()) {
             final TestAction currentAction = listAction.get(currentActionId);
             Log.d(TAG, "Try to send packet");
-            sendUdpPacket();
+            sendUdpPacket("Step: " + currentActionId);
             currentAction.executeAction();
 
             // Wait a defined time
@@ -72,10 +72,10 @@ public class TimerTestActionTask extends Thread {
 
             ++currentActionId; // Get next action
         }
+        sendUdpPacket("Finish");
     }
 
-    private void sendUdpPacket() {
-        String messageStr = "Ping " + currentActionId;
+    private void sendUdpPacket(final String messageStr) {
         int server_port = 12345;
         try {
             final DatagramSocket socket = new DatagramSocket();
