@@ -6,3 +6,9 @@ wifi:
 
 analyze:
 	sudo python3 server/analyze.py --phone-ip `./script/getPhoneIp.sh` --local-ip 192.168.12.1
+
+test_phone_1:
+	python3 server/analyze.py -f package_init_phone_sony.pcapng -i -p 192.168.12.243
+
+test_phone_2:
+	python3 server/analyze.py -f package_init_phone_acer.pcapng -i -p 192.168.12.225
