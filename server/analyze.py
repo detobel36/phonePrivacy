@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from scapy.all import wrpcap, sniff, IP, ARP, DNS, UDP, IPv6, Dot3, Raw
+from scapy.all import wrpcap, sniff, IP, ARP, DNS, UDP, IPv6, Dot3, Raw, DNSRR
 import os
 import socket
 import argparse
@@ -9,20 +9,61 @@ import ipaddress
 
 
 ## Utils
-def mergeListInDict(dictionnary):
-    result = list()
+def sumStepToOneDict(dictionnary):
+    result = dict()
     values = list(dictionnary.values())
-    for i in range(len(values)):
-        result.extend(values[i])
+    for elem in values:
+        for key in elem.keys():
+            if key not in result:
+                result[key] = 0
+            result[key] += elem[key]
     return result
 
 
+
 def getCurrentDatetime():
-    return str(datetime.now().strftime('%Y-%m-%d_%H:%M:%S'))
+    return str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
 def getCurrentDir():
     return str(os.path.dirname(os.path.realpath(__file__)))
 
+
+class StoreDNS:
+
+    def __init__(self, name, listResponse = None, numRequest = 1):
+        self.name = name
+        if(listResponse == None):
+            self.response = list()
+        else:
+            self.response = listResponse
+        self.numRequest = numRequest
+
+    def addResponse(self, response):
+        self.response.append(response)
+
+    def incrementNbrRequst(self):
+        self.numRequest += 1
+
+    def __repr__(self):
+        return 'StoreDNS(' + str(self.name) + ", " + str(self.response) + ", " + \
+            str(self.numRequest) + ")"
+
+    def __str__(self):
+        result = '{:40} ({} requests)\n'.format(self.name, self.numRequest)
+        for selectedResponse in set(self.response):
+            result += '\t{:>15}\n'.format(selectedResponse)
+        return result
+
+    def __add__(self, other):
+        if(other.name == self.name):
+            return StoreDNS(self.name, list(set(self.response + other.response)), \
+                self.numRequest + other.numRequest)
+        return TypeError("DNS Name are not the same")
+
+    def __radd__(self, other):
+        if(other == 0):
+            return self
+        return TypeError("Could only be add with zero (which is default value)")
 
 class Analyze:
 
@@ -33,19 +74,25 @@ class Analyze:
     DEFAULT_LOCAL_IP_ADDRRESS = "192.168.12.1"
     PING_PORT = 12345
     
-    def __init__(self, phoneIp, localIp):
+    def __init__(self, phoneIp, localIp, ignore_step):
         
-        self.localIp = DEFAULT_LOCAL_IP_ADDRRESS if localIp is None else localIp
-        self.phoneIp = DEFAULT_PHONE_IP if phoneIp is None else phoneIp
+        self.localIp = self.DEFAULT_LOCAL_IP_ADDRRESS if localIp is None else localIp
+        self.phoneIp = self.DEFAULT_PHONE_IP if phoneIp is None else phoneIp
+        self.ignore_step = ignore_step
 
         print("Init analyze of phone: " + str(self.phoneIp) + " with local IP: " + str(self.localIp))
 
         self.allHost = dict()
         self.allDnsRequest = dict()
         self.allLocalRequest = dict()  # TODO utilise ces données
-        self.listPackets = list()
         self.listStepPackets = list()
-        self.currentStep = -1;
+        self.registerIpDns = [self.localIp, self.phoneIp]
+
+        if(self.ignore_step):
+            self.currentStep = 0
+            self.listStepPackets.append(list())
+        else:
+            self.currentStep = -1
 
     def _getPacketIp(self, packet):
         if(packet != None):
@@ -82,6 +129,8 @@ class Analyze:
         if(len(self.allLocalRequest) > 0 or len(self.allHost) > 0 or len(self.allDnsRequest) > 0):
             print("The analyze has already been done")
             return
+        else:
+            print("Analyze " + str(len(self.listStepPackets)) + " steps")
 
         for step in range(len(self.listStepPackets)):
             self.allLocalRequest[step] = dict()
@@ -104,11 +153,32 @@ class Analyze:
 
                 # Check DNS Request
                 if(packet.haslayer(DNS)):
+                    # print("DNS resquest: ")
+                    # packet[DNS].show()
+
                     dnsRequest = str(packet[DNS].qd.qname.decode("utf-8"))
 
                     if(dnsRequest not in self.allDnsRequest[step]):
-                        self.allDnsRequest[step][dnsRequest] = 0
-                    self.allDnsRequest[step][dnsRequest] += 1
+                        self.allDnsRequest[step][dnsRequest] = StoreDNS(dnsRequest)
+                    
+                    # Check if package contain a response
+                    if(packet.haslayer(DNSRR)):
+                        a_count = packet[DNS].ancount
+
+                        i = a_count + 4
+                        while i > 4:
+                            response = packet[0][i]
+                            if(response.type == 1):
+                                self.registerIpDns.append(response.rdata)
+                                self.allDnsRequest[step][dnsRequest].addResponse(response.rdata)
+                            
+                            i -= 1
+                    else:
+                        self.allDnsRequest[step][dnsRequest].incrementNbrRequst()
+
+                    # if(dnsRequest not in self.allDnsRequest[step]):
+                    #     self.allDnsRequest[step][dnsRequest] = 0
+                    # self.allDnsRequest[step][dnsRequest] += 1
 
     def _detectStep(self, packet):
         if(self._isPacketLinkedToPhone(packet)):
@@ -121,48 +191,72 @@ class Analyze:
                     "(current: " + str(self.currentStep) + ")")
 
             if(self.currentStep >= 0):
-                self.listPackets.append(packet)
                 self.listStepPackets[self.currentStep].append(packet)
+
+    def _getAllPackets(self):
+        """
+        Join all packets store at each step and produce one big list
+
+        :return: List with all packets
+        """
+        return [item for sublist in self.listStepPackets for item in sublist]
 
     def savePackets(self, outputFolder):
         if(outputFolder is None):
             outputFolder = getCurrentDir()
 
         wrpcap(outputFolder + "/save_" + getCurrentDatetime() + ".pcap", 
-            self.listPackets)
+            self._getAllPackets())
 
-    def _saveResultRequest(self, resultFile, listDnsRequest, listHardCodedIp):
+    def _saveResultRequest(self, resultFile, listDnsRequest, allHost):
         resultFile.write("\n")
         resultFile.write("DNS Request:\n")
-        for dnsRequest in listDnsRequest:
-            dnsRequest = str(dnsRequest)
-            try:
-                ipDnsRequest = socket.gethostbyname(dnsRequest)
-            except OSError:
-                print("Error with DNS request: " + str(dnsRequest))
-                resultFile.write("   ?   - " + dnsRequest + "\n")
-            else:
-                if(ipDnsRequest in listHardCodedIp):
-                    listHardCodedIp.remove(ipDnsRequest)
-                resultFile.write("  " + ipDnsRequest + " - " + dnsRequest + "\n")
 
+        for dnsRequest in listDnsRequest.values():
+            # dnsRequest = str(dnsRequest)
+            # try:
+            #     ipDnsRequest = socket.gethostbyname(dnsRequest)
+            # except OSError:
+            #     print("Error with DNS request: " + str(dnsRequest))
+            #     ipDnsRequest = "?"
+                # resultFile.write("   ?   - " + dnsRequest + "\n")
+            # else:
+                # resultFile.write("  " + ipDnsRequest + " - " + dnsRequest + "\n")
+            resultFile.write(' ' + str(dnsRequest))
+            # resultFile.write(' {:40} -> {:>15} ({} requests)\n'.format(dnsRequest, ipDnsRequest, listDnsRequest[dnsRequest]))
 
-        if(len(listHardCodedIp) > 0):
-            resultFile.write("\n")
+        resultFile.write("\n")
+        resultFile.write("Requests:\n")
+        for host in allHost:
+            resultFile.write(' {:>15}: {} requests\n'.format(host, allHost[host]))
+
+        listPotentialHardCodedIp = list(allHost.keys())
+        hardCodedIp = set(listPotentialHardCodedIp) - set(self.registerIpDns)
+
+        resultFile.write("\n")
+        if(len(hardCodedIp) > 0):
             resultFile.write("Hard coded IP:\n")
 
-            for hardCodedIp in listHardCodedIp:
+            for selectedIp in hardCodedIp:
                 try:
-                    reversed_dns = socket.gethostbyaddr(hardCodedIp)
+                    reversed_dns = socket.gethostbyaddr(selectedIp)
                 except socket.herror:
                     reversed_dns = None
 
                 if(reversed_dns != None and len(reversed_dns) > 0):
-                    resultFile.write("  " + hardCodedIp + " - " + str(reversed_dns[0]) + "\n")
+                    dnsInfo = str(reversed_dns[0])
                 else:
-                    resultFile.write("  " + hardCodedIp + "\n")
+                    dnsInfo = ""
+                    # resultFile.write("  " + selectedIp + " - " + str(reversed_dns[0]) + "\n")
+                # else:
+                #     resultFile.write("  " + selectedIp + "\n")
 
-    def saveResults(self):
+                resultFile.write(' {:40} -> {:>15}\n'.format(dnsInfo, selectedIp))
+        else:
+            resultFile.write("No hard coded IP\n")
+
+
+    def saveResults(self, outputFolder):
         if(outputFolder is None):
             outputFolder = getCurrentDir()
 
@@ -171,23 +265,25 @@ class Analyze:
             # General header
             resultFile.write("======== General results =========\n")
 
-            allHostAllStep = mergeListInDict(self.allHost)
-            allDnsRequestAllStep = mergeListInDict(self.allDnsRequest)
-            allHardCodedIp = allHostAllStep[:]
+            allHostAllStep = sumStepToOneDict(self.allHost)
+            allDnsRequestAllStep = sumStepToOneDict(self.allDnsRequest)
 
-            self._saveResultRequest(resultFile, allDnsRequestAllStep, allHardCodedIp)
+            self._saveResultRequest(resultFile, allDnsRequestAllStep, allHostAllStep)
 
             # General footer
             resultFile.write("\n")
             
+            if(len(self.listStepPackets) > 1):
+                for step in range(len(self.listStepPackets)):
+                    if(self.ignore_step):
+                        diplay_step = step-1
 
-            for step in range(len(self.listStepPackets)):
-                resultFile.write("============= Step " + str(step) + " =============\n")
+                    resultFile.write("============= Step " + str(diplay_step) + " =============\n")
 
-                hardCodedIp = self.allHost[step][:]
-                self._saveResultRequest(resultFile, self.allDnsRequest[step], hardCodedIp)
+                    hardCodedIp = list(self.allHost[step].keys())
+                    self._saveResultRequest(resultFile, self.allDnsRequest[step], self.allHost[step])
 
-                resultFile.write("==================================\n")
+                    resultFile.write("==================================\n")
 
     def _detectFinishPacket(self, packet):
         return self._getPacketIp(packet) == self.localIp and packet.haslayer(UDP) and \
@@ -202,6 +298,16 @@ class Analyze:
 
         self._analyzePacket()
 
+    def readFile(self, filename):
+        try:
+            sniff(offline=open(filename, "rb"), prn=self._detectStep, 
+                stop_filter=self._detectFinishPacket)
+        except OSError as e:
+            print("Problem with connexion: " + str(e))
+
+        print(str(len(self._getAllPackets())) + " packets captured")
+        self._analyzePacket()
+
 
 if __name__ == '__main__':
     # TODO changer la description
@@ -209,11 +315,19 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--phone-ip", help="IP of the phone analyzed")
     parser.add_argument("-l", "--local-ip", help="Local IP")
     parser.add_argument("-o", "--output", help="Output folder")
+    parser.add_argument("-f", "--input-file", help="Analyze packet file and not captured packet")
+    parser.add_argument("-i", "--ignore-step", help="Ignore step to begin the analyze", 
+        action='store_true')
 
     args = parser.parse_args()
 
-    analyzeObject = Analyze(args.phone_ip, args.local_ip)
-    analyzeObject.sniffPacket()
-    analyzeObject.savePackets(args.output)
+    analyzeObject = Analyze(args.phone_ip, args.local_ip, args.ignore_step)
+
+    if(args.input_file is None):
+        analyzeObject.sniffPacket()
+        analyzeObject.savePackets(args.output)
+    else:
+        analyzeObject.readFile(args.input_file)
+
     analyzeObject.saveResults(args.output)
 
