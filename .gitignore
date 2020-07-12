@@ -8,5 +8,4 @@ Testbed/captures
 Testbed/.externalNativeBuild
 Testbed/.cxx
 *.pcap
-*.pcapng
 */results_*.txt

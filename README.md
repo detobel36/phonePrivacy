@@ -10,6 +10,8 @@ Project to analyze packets from android phone.
   Code to analyze packet
 - [script](script)
   Useful script (get IP of phone for instance)
+- [trace](trace)
+  Store package trace
 
 
 ## Dependancies
