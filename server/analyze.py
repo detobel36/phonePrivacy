@@ -5,6 +5,7 @@ import os
 import socket
 import argparse
 from datetime import datetime
+from math import log10
 import ipaddress
 
 
@@ -20,6 +21,16 @@ def sumStepToOneDict(dictionnary):
     return result
 
 
+def formatBigNumber(number, size = None):
+    if(size is None):
+        strFormated = '{:,}'
+    else:
+        sizeLength = int(log10(size)+1)
+        # Add space
+        sizeLength += int((sizeLength-1) / 3)
+        strFormated = '{:' + str(sizeLength) + ',}'
+
+    return strFormated.format(number).replace(',', ' ')
 
 def getCurrentDatetime():
     return str(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
@@ -31,6 +42,9 @@ def getCurrentDir():
 class StoreDNS:
 
     def __init__(self, name, listResponse = None, numRequest = 1):
+        if(name[-1] == "."):
+            name = name[:-1]
+
         self.name = name
         if(listResponse == None):
             self.response = list()
@@ -43,6 +57,12 @@ class StoreDNS:
 
     def incrementNbrRequst(self):
         self.numRequest += 1
+
+    def ipRegisterByDns(self, ip):
+        return ip in self.response
+
+    def getName(self):
+        return self.name
 
     def __repr__(self):
         return 'StoreDNS(' + str(self.name) + ", " + str(self.response) + ", " + \
@@ -210,25 +230,28 @@ class Analyze:
 
     def _saveResultRequest(self, resultFile, listDnsRequest, allHost):
         resultFile.write("\n")
+        resultFile.write("Number of host: " + str(formatBigNumber(len(allHost))) + "\n")
+        resultFile.write("Number of packages: " + str(formatBigNumber(sum(allHost.values()))) + "\n")
+        resultFile.write("\n")
         resultFile.write("DNS Request:\n")
 
         for dnsRequest in listDnsRequest.values():
-            # dnsRequest = str(dnsRequest)
-            # try:
-            #     ipDnsRequest = socket.gethostbyname(dnsRequest)
-            # except OSError:
-            #     print("Error with DNS request: " + str(dnsRequest))
-            #     ipDnsRequest = "?"
-                # resultFile.write("   ?   - " + dnsRequest + "\n")
-            # else:
-                # resultFile.write("  " + ipDnsRequest + " - " + dnsRequest + "\n")
             resultFile.write(' ' + str(dnsRequest))
-            # resultFile.write(' {:40} -> {:>15} ({} requests)\n'.format(dnsRequest, ipDnsRequest, listDnsRequest[dnsRequest]))
 
         resultFile.write("\n")
         resultFile.write("Requests:\n")
-        for host in allHost:
-            resultFile.write(' {:>15}: {} requests\n'.format(host, allHost[host]))
+        maxRequestForOneHost = max(allHost.values())
+        for host in sorted(allHost, key=allHost.__getitem__, reverse=True):
+
+            hostName = list()
+            for dnsRequest in listDnsRequest.values():
+                if(dnsRequest.ipRegisterByDns(host)):
+                    hostName.append(dnsRequest.getName())
+            if(ipaddress.IPv4Address(host) in self.LOCAL_NETWORK):
+                hostName.append("LocalNetwork")
+
+            resultFile.write(' ' + formatBigNumber(allHost[host], maxRequestForOneHost) + \
+                ' requests {:>15} ({})\n'.format(host, ", ".join(hostName)))
 
         listPotentialHardCodedIp = list(allHost.keys())
         hardCodedIp = set(listPotentialHardCodedIp) - set(self.registerIpDns)
@@ -247,9 +270,6 @@ class Analyze:
                     dnsInfo = str(reversed_dns[0])
                 else:
                     dnsInfo = ""
-                    # resultFile.write("  " + selectedIp + " - " + str(reversed_dns[0]) + "\n")
-                # else:
-                #     resultFile.write("  " + selectedIp + "\n")
 
                 resultFile.write(' {:40} -> {:>15}\n'.format(dnsInfo, selectedIp))
         else:
@@ -284,6 +304,7 @@ class Analyze:
                     self._saveResultRequest(resultFile, self.allDnsRequest[step], self.allHost[step])
 
                     resultFile.write("==================================\n")
+        print("Saved result into: " + str(outputFolder + "/results_" + getCurrentDatetime() + ".txt"))
 
     def _detectFinishPacket(self, packet):
         return self._getPacketIp(packet) == self.localIp and packet.haslayer(UDP) and \
@@ -306,7 +327,8 @@ class Analyze:
             print("Problem with connexion: " + str(e))
 
         print(str(len(self._getAllPackets())) + " packets captured")
-        self._analyzePacket()
+        if(len(self._getAllPackets()) > 0):
+            self._analyzePacket()
 
 
 if __name__ == '__main__':
