@@ -62,7 +62,7 @@ public class TimerTestActionTask extends Thread {
                         currentAction.getProgressBar().setProgress(timingToPercent);
                     }
                 });
-
+e
                 try {
                     Thread.sleep(500); // 0.5 second
                 } catch (InterruptedException e) {

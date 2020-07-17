@@ -1,8 +1,7 @@
 package be.ulb.testbed;
 
+import android.app.Activity;
 import android.widget.ProgressBar;
-
-import androidx.appcompat.app.AppCompatActivity;
 
 /**
  * Store test action
@@ -12,8 +11,8 @@ public abstract class TestAction {
     private final ProgressBar progressBar;
     private final int timer;
 
-    protected TestAction(final AppCompatActivity testView, final int layoutId, final int timer) {
-        progressBar = testView.findViewById(layoutId);
+    protected TestAction(final Activity testView, final int layoutId, final int timer) {
+        progressBar = (ProgressBar) testView.findViewById(layoutId);
         this.timer = timer;
     }
 

@@ -3,11 +3,10 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 28
 
-
     defaultConfig {
         applicationId "be.ulb.testbed"
-        minSdkVersion 22
-        targetSdkVersion 28
+        minSdkVersion 21
+        targetSdkVersion 21
         versionCode 1
         versionName "1.0"
 
@@ -32,6 +31,6 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
-    implementation 'eu.chainfire:libsuperuser:1.1.0.+'
+    implementation 'eu.chainfire:libsuperuser:1.1.0.202004101746'
     implementation 'com.google.android.gms:play-services-location:17.0.0'
 }
