@@ -106,7 +106,7 @@ class Analyze:
         self.allDnsRequest = dict()
         self.allLocalRequest = dict()  # TODO utilise ces données
         self.listStepPackets = list()
-        self.registerIpDns = [self.localIp, self.phoneIp]
+        self.registerIpDns = [self.localIp, self.phoneIp, "0.0.0.0"]
 
         if(self.ignore_step):
             self.currentStep = 0
