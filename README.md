@@ -4,13 +4,13 @@ Project to analyze packets from android phone.
 
 
 ## Folders
-- [Testbed](Testbed)
+- [Testbed](Testbed)    
   Android application for testbed
-- [server](server)
+- [server](server)    
   Code to analyze packet
-- [script](script)
+- [script](script)    
   Useful script (get IP of phone for instance)
-- [trace](trace)
+- [traces](traces)    
   Store package trace
 
 
