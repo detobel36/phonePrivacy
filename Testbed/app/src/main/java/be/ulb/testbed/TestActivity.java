@@ -29,6 +29,13 @@ public class TestActivity extends AppCompatActivity {
 
         initSensor();
 
+        /*
+        TextView myAwesomeTextView = (TextView)findViewById(R.id.textViewBlueetoothOFF);
+        myAwesomeTextView.setText("Test");
+
+        https://stackoverflow.com/a/6661379
+        */
+
         setContentView(R.layout.activity_test);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -36,13 +43,6 @@ public class TestActivity extends AppCompatActivity {
             @Override
             public void executeAction() {
                 customWifiManager.enable();
-            }
-        });
-
-        listAction.add(new TestAction(this, R.id.progressBarNoModification, 60) {
-            @Override
-            public void executeAction() {
-                // Do nothing
             }
         });
 
@@ -66,6 +66,14 @@ public class TestActivity extends AppCompatActivity {
                 customLocationManager.enable();
             }
         });
+
+        listAction.add(new TestAction(this, R.id.progressBarLocationOFF, 30) {
+            @Override
+            public void executeAction() {
+                customLocationManager.disable();
+            }
+        });
+
 
         listAction.add(new TestAction(this, R.id.progressBarWifiOFF, 30) {
             @Override

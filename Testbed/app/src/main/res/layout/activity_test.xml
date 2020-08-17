@@ -56,34 +56,6 @@
                 app:layout_constraintTop_toBottomOf="@+id/textViewWifiON" />
 
             <TextView
-                android:id="@+id/textViewNoModification"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="50dp"
-                android:layout_marginTop="20dp"
-                android:text="Normal activity (no modification)"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/progressBarWifiON" />
-
-            <ProgressBar
-                android:id="@+id/progressBarNoModification"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="300dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="50dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="50dp"
-                android:max="100"
-                android:progress="0"
-                android:progressTint="#035AF1"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.545"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/textViewNoModification" />
-
-            <TextView
                 android:id="@+id/textViewBlueetoothON"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -139,7 +111,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textViewBlueetoothOFF" />
 
-
             <TextView
                 android:id="@+id/textViewLocationON"
                 android:layout_width="wrap_content"
@@ -166,6 +137,34 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/textViewLocationON" />
+
+            <TextView
+                android:id="@+id/textViewLocationOFF"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="50dp"
+                android:layout_marginTop="20dp"
+                android:text="Location OFF"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/progressBarLocationON" />
+
+            <ProgressBar
+                android:id="@+id/progressBarLocationOFF"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="300dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="50dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginEnd="50dp"
+                android:max="100"
+                android:progress="0"
+                android:progressTint="#035AF1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.545"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/textViewLocationOFF" />
 
             <TextView
                 android:id="@+id/textViewWifiOFF"
