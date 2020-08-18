@@ -188,9 +188,12 @@ class Analyze:
                         i = a_count + 4
                         while i > 4:
                             response = packet[0][i]
-                            if(response.type == 1):
-                                self.registerIpDns.append(response.rdata)
-                                self.allDnsRequest[step][dnsRequest].addResponse(response.rdata)
+                            try:
+                                if(response.type == 1):
+                                    self.registerIpDns.append(response.rdata)
+                                    self.allDnsRequest[step][dnsRequest].addResponse(response.rdata)
+                            except AttributeError:
+                                pass
                             
                             i -= 1
                     else:
@@ -297,6 +300,8 @@ class Analyze:
                 for step in range(len(self.listStepPackets)):
                     if(self.ignore_step):
                         diplay_step = step-1
+                    else:
+                        diplay_step = step
 
                     resultFile.write("============= Step " + str(diplay_step) + " =============\n")
 
